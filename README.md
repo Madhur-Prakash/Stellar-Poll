@@ -32,22 +32,28 @@ StellarPoll is a fully decentralized polling application built on Stellar's Soro
 > **To add screenshots:** run `npm run dev`, capture each state below, save them as `screenshots/01-poll.png` etc. in the repo root, then the images will render automatically.
 
 ### 1 — Poll Overview
-![Poll overview — question, vote bars, and live results](screenshots/01-poll.png)
+<img width="1302" height="856" alt="Screenshot 2026-06-21 020506" src="https://github.com/user-attachments/assets/09071314-c60d-4c8d-8ca8-744dd45eef04" />
+
 
 ### 2 — Wallet Selection Modal
-![Wallet selection modal showing 11 supported wallets](screenshots/02-wallet-modal.png)
+<img width="1755" height="872" alt="Screenshot 2026-06-21 021512" src="https://github.com/user-attachments/assets/32ce483c-61d4-4700-b99a-5041a76065db" />
+
 
 ### 3 — Connected Wallet + Vote Form
-![Connected wallet panel with address, balance, and vote form](screenshots/03-vote-form.png)
+<img width="1307" height="952" alt="Screenshot 2026-06-21 021909" src="https://github.com/user-attachments/assets/9a2dac5c-e293-440f-a82a-00d1caf5db1c" />
+
 
 ### 4 — Transaction In Progress
-![Live transaction status: building → signing → submitting → confirming](screenshots/04-tx-progress.png)
+<img width="1478" height="922" alt="Screenshot 2026-06-21 021948" src="https://github.com/user-attachments/assets/78923068-e244-4510-ad23-5004f635a4fa" />
+
 
 ### 5 — Vote Success
-![Green success state with on-chain transaction hash and Stellar.Expert link](screenshots/05-tx-success.png)
+<img width="1290" height="891" alt="Screenshot 2026-06-21 022027" src="https://github.com/user-attachments/assets/ca46711c-735d-4875-9f7c-daf7e81e885a" />
+
 
 ### 6 — Already Voted State
-![Already voted state showing the user's selected option](screenshots/06-already-voted.png)
+<img width="1520" height="928" alt="Screenshot 2026-06-21 022051" src="https://github.com/user-attachments/assets/66d687fa-1d5a-4b4d-9937-fa61da340935" />
+
 
 ---
 
