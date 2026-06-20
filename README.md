@@ -6,7 +6,7 @@ StellarPoll is a fully decentralized polling application built on Stellar's Soro
 > **Contract Runtime:** Soroban (Rust WASM)  
 > **Frontend:** Next.js 16 + React 19 + Tailwind CSS v4
 
-**🔗 Live Demo:** <!-- ADD YOUR VERCEL URL HERE → e.g. https://stellar-poll.vercel.app -->
+**🔗 Live Demo:** [https://stellar-poll-five.vercel.app/](https://stellar-poll-five.vercel.app/)
 
 ---
 
@@ -14,7 +14,7 @@ StellarPoll is a fully decentralized polling application built on Stellar's Soro
 
 | | |
 |---|---|
-| **Live Demo** | <!-- ADD URL HERE → https://your-app.vercel.app --> |
+| **Live Demo** | https://stellar-poll-five.vercel.app/ |
 | **GitHub Repo** | https://github.com/Madhur-Prakash/Stellar-Poll |
 | **Deployed Contract** | `CACV7UXHHMP4IIKPCN4OLOQIOUSJOZ5TV4HCV5BLXPHK5NLZQ7RUNBGS` |
 | **Contract Explorer** | [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CACV7UXHHMP4IIKPCN4OLOQIOUSJOZ5TV4HCV5BLXPHK5NLZQ7RUNBGS) |
