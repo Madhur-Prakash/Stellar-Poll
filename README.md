@@ -29,14 +29,25 @@ StellarPoll is a fully decentralized polling application built on Stellar's Soro
 
 ## Screenshots
 
-### Wallet Options
+> **To add screenshots:** run `npm run dev`, capture each state below, save them as `screenshots/01-poll.png` etc. in the repo root, then the images will render automatically.
 
-<!-- Replace with your actual screenshot -->
-| Wallet Connect | Poll + Vote Form | Transaction Success |
-|---|---|---|
-| _(add screenshot)_ | _(add screenshot)_ | _(add screenshot)_ |
+### 1 — Poll Overview
+![Poll overview — question, vote bars, and live results](screenshots/01-poll.png)
 
-> To take screenshots: run `npm run dev`, connect Freighter, and capture the wallet modal, the poll card, and the vote success state.
+### 2 — Wallet Selection Modal
+![Wallet selection modal showing 11 supported wallets](screenshots/02-wallet-modal.png)
+
+### 3 — Connected Wallet + Vote Form
+![Connected wallet panel with address, balance, and vote form](screenshots/03-vote-form.png)
+
+### 4 — Transaction In Progress
+![Live transaction status: building → signing → submitting → confirming](screenshots/04-tx-progress.png)
+
+### 5 — Vote Success
+![Green success state with on-chain transaction hash and Stellar.Expert link](screenshots/05-tx-success.png)
+
+### 6 — Already Voted State
+![Already voted state showing the user's selected option](screenshots/06-already-voted.png)
 
 ---
 
@@ -74,7 +85,7 @@ StellarPoll is a fully decentralized polling application built on Stellar's Soro
 | **On-chain voting** | Every vote is a signed Soroban transaction; the contract enforces one vote per address via `require_auth()` |
 | **Real-time updates** | Poll data auto-refreshes every 8 seconds from Soroban RPC |
 | **Transaction tracking** | Live status: Building → Signing → Submitting → Confirming → Success/Failed |
-| **Multi-wallet support** | StellarWalletsKit with Freighter; extensible to LOBSTR, xBull |
+| **Multi-wallet support** | StellarWalletsKit with 11 wallets: Freighter, Albedo, xBull, LOBSTR, Rabet, Hana, Bitget, Klever, OneKey, CactusLink, HotWallet |
 | **Activity feed** | Session-scoped live feed of votes with transaction links to Stellar.Expert |
 | **Auto-reconnect** | Restores prior wallet session on page reload via localStorage |
 | **3 error types handled** | Wallet Not Found, User Rejected, Insufficient Balance |
@@ -513,17 +524,23 @@ User clicks "Submit Vote"
 
 ## Wallet Support
 
-StellarWalletsKit is initialized with `FreighterModule` only. To add more wallets, extend `walletkit.ts`:
+StellarWalletsKit is initialized with 11 wallet modules in `frontend/src/lib/walletkit.ts`:
 
-```typescript
-import { FreighterModule, LobstrModule, xBullModule } from "@creit.tech/stellar-wallets-kit";
+| Wallet | Type |
+|---|---|
+| **Freighter** | Browser extension (most common) |
+| **Albedo** | Web-based — no extension needed |
+| **xBull** | Extension + web, Soroban native |
+| **LOBSTR** | Mobile + browser extension |
+| **Rabet** | Lightweight browser extension |
+| **Hana** | Browser extension |
+| **Bitget** | Bitget Web3 wallet |
+| **Klever** | Multi-chain mobile + extension |
+| **OneKey** | Hardware + extension |
+| **CactusLink** | Stellar mobile wallet |
+| **HotWallet** | Web-based browser wallet |
 
-kit = new StellarWalletsKit({
-  network: Networks.TESTNET,
-  selectedWalletId: "freighter",
-  modules: [new FreighterModule(), new LobstrModule(), new xBullModule()],
-});
-```
+The kit's built-in modal renders the wallet picker UI automatically — no custom UI needed. To add WalletConnect, Ledger, or Trezor, those require extra npm packages or a project ID.
 
 ---
 
