@@ -6,10 +6,44 @@ StellarPoll is a fully decentralized polling application built on Stellar's Soro
 > **Contract Runtime:** Soroban (Rust WASM)  
 > **Frontend:** Next.js 16 + React 19 + Tailwind CSS v4
 
+**🔗 Live Demo:** <!-- ADD YOUR VERCEL URL HERE → e.g. https://stellar-poll.vercel.app -->
+
+---
+
+## Submission Info
+
+| | |
+|---|---|
+| **Live Demo** | <!-- ADD URL HERE → https://your-app.vercel.app --> |
+| **GitHub Repo** | https://github.com/Madhur-Prakash/Stellar-Poll |
+| **Deployed Contract** | `CACV7UXHHMP4IIKPCN4OLOQIOUSJOZ5TV4HCV5BLXPHK5NLZQ7RUNBGS` |
+| **Contract Explorer** | [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CACV7UXHHMP4IIKPCN4OLOQIOUSJOZ5TV4HCV5BLXPHK5NLZQ7RUNBGS) |
+| **Sample Vote Tx** | `<paste transaction hash of a vote here>` |
+| **Tx Verifier** | [View on Stellar Expert](https://stellar.expert/explorer/testnet/tx/<hash>) |
+
+> **How to fill this in:**
+> - Deploy the contract → paste the `C...` Contract ID in both rows above
+> - Cast one vote in the app → copy the tx hash shown in the success box → paste it in Sample Vote Tx
+
+---
+
+## Screenshots
+
+### Wallet Options
+
+<!-- Replace with your actual screenshot -->
+| Wallet Connect | Poll + Vote Form | Transaction Success |
+|---|---|---|
+| _(add screenshot)_ | _(add screenshot)_ | _(add screenshot)_ |
+
+> To take screenshots: run `npm run dev`, connect Freighter, and capture the wallet modal, the poll card, and the vote success state.
+
 ---
 
 ## Table of Contents
 
+- [Submission Info](#submission-info)
+- [Screenshots](#screenshots)
 - [Features](#features)
 - [Architecture Overview](#architecture-overview)
 - [Tech Stack](#tech-stack)
@@ -186,12 +220,15 @@ Get free testnet XLM from the [Stellar Faucet](https://laboratory.stellar.org/ac
 
 > **Where to run what — at a glance:**
 >
-> | Step | Directory | Shell |
+> | Command | Directory | Shell |
 > |---|---|---|
-> | Install Rust / Node | anywhere | any |
-> | `rustup target add ...` | anywhere | any |
+> | `rustup target add wasm32v1-none` | anywhere | any |
 > | `cargo install stellar-cli` | anywhere | any |
-> | `bash contracts/deploy.sh` | `stellar_poll/` (repo root) | **Git Bash** |
+> | `stellar contract build` | `stellar_poll/contracts/poll/` | Git Bash |
+> | `stellar keys generate deployer ...` | anywhere | Git Bash |
+> | `stellar contract upload ...` | `stellar_poll/` (repo root) | Git Bash |
+> | `stellar contract deploy ...` | anywhere | Git Bash |
+> | `stellar contract invoke ... initialize` | anywhere | Git Bash |
 > | `npm install` / `npm run dev` | `stellar_poll/frontend/` | any |
 
 ---
@@ -211,8 +248,8 @@ cd stellar_poll
 Open **any terminal** (PowerShell, cmd, or Git Bash) and run each line:
 
 ```bash
-# Run from: anywhere — installs the WASM compilation target
-rustup target add wasm32-unknown-unknown
+# Run from: anywhere — installs the WASM compilation target (newer stellar-cli uses wasm32v1-none)
+rustup target add wasm32v1-none
 ```
 
 ```bash
@@ -226,40 +263,103 @@ Verify: `stellar --version`
 
 ### Step 3 — Deploy the Soroban contract
 
-> **Windows:** The deploy script is a `.sh` bash file. Use **Git Bash** (installed with Git for Windows), not PowerShell or cmd.
+> **Windows:** Use **Git Bash** for all commands below, not PowerShell or cmd.
+
+Run each sub-step in order.
+
+**3a — Build the contract**
 
 ```bash
-# Run from: stellar_poll/  (the repo root, NOT the frontend folder)
-bash contracts/deploy.sh
+# Run from: stellar_poll/contracts/poll/
+cd contracts/poll
+stellar contract build
 ```
 
-What the script does:
-1. Compiles `contracts/poll/src/lib.rs` → WASM binary
-2. Generates a `deployer` keypair and funds it from the testnet friendbot
-3. Uploads the WASM to Stellar Testnet
-4. Deploys the contract instance → prints a `CONTRACT_ID`
-5. Calls `initialize()` with a default poll question and 4 options
+You'll see `✅ Build Complete` and a WASM hash in the output.
 
-At the end you will see:
-```
-✅ Done! Add this to your .env.local:
-NEXT_PUBLIC_CONTRACT_ID=CABC1234...your_real_id...
+**3b — Create deployer identity**
+
+```bash
+# Run from: anywhere
+stellar keys generate deployer --network testnet
+stellar keys address deployer
 ```
 
-**Copy that contract ID.**
+Copy the `G...` address printed — that is your deployer.
+
+**3c — Fund deployer from testnet faucet (free)**
+
+```bash
+# Replace with your actual G... address from 3b
+curl -s "https://friendbot.stellar.org?addr=YOUR_DEPLOYER_ADDRESS"
+```
+
+**3d — Upload the WASM to Stellar Testnet**
+
+```bash
+# Run from: stellar_poll/ (repo root)
+stellar contract upload \
+  --network testnet \
+  --source deployer \
+  --wasm contracts/poll/target/wasm32v1-none/release/poll_contract.wasm
+```
+
+Copy the 64-character hex hash it prints.
+
+**3e — Deploy the contract**
+
+```bash
+# Run from: anywhere
+stellar contract deploy \
+  --network testnet \
+  --source deployer \
+  --wasm-hash YOUR_WASM_HASH_FROM_3d
+```
+
+Copy the `C...` Contract ID it prints.
+
+**3f — Initialize the poll**
+
+**Git Bash / macOS / Linux:**
+```bash
+stellar contract invoke \
+  --network testnet \
+  --source deployer \
+  --id YOUR_CONTRACT_ID_FROM_3e \
+  -- initialize \
+  --question "What is the best use case for Stellar?" \
+  --options '["DeFi & DEX Trading","Cross-border Payments","NFT Marketplace","Micropayments & Remittances"]'
+```
+
+**PowerShell (Windows) — options with spaces need a file:**
+```powershell
+# Write options to a file first (PowerShell strips inner quotes otherwise)
+'["DeFi & DEX Trading","Cross-border Payments","NFT Marketplace","Micropayments & Remittances"]' | Out-File -Encoding utf8 options.json
+
+stellar contract invoke --network testnet --source deployer --id YOUR_CONTRACT_ID_FROM_3e -- initialize --question "What is the best use case for Stellar?" --options-file-path options.json
+```
+
+> **Shortcut:** Steps 3a–3f are automated in `contracts/deploy.sh`. Run it with Git Bash from the repo root if you prefer one command:
+> ```bash
+> bash contracts/deploy.sh
+> ```
 
 ---
 
-### Step 4 — Set the contract ID
+### Step 4 — Set the contract ID and simulation source
 
-Open `frontend/.env` and replace the placeholder with your real contract ID:
+Open `frontend/.env` and fill in both values:
 
 ```env
-# frontend/.env  — edit this file directly
-NEXT_PUBLIC_CONTRACT_ID=CABC1234...your_real_id_from_step_3...
+# frontend/.env
+NEXT_PUBLIC_CONTRACT_ID=C...your_real_contract_id_from_step_3e...
+
+# Funded testnet account used as simulation source for read-only calls (no XLM spent)
+# Use your deployer address: run `stellar keys address deployer`
+NEXT_PUBLIC_SIMULATED_SOURCE_ADDRESS=G...your_deployer_address...
 ```
 
-> The file already exists at `frontend/.env`. Just open it and replace `C...your_contract_id_here...` with the ID printed by the deploy script.
+**Restart the dev server** after editing `.env` — Next.js bakes these values at startup.
 
 ---
 
@@ -282,18 +382,20 @@ Connect Freighter (make sure it's on Testnet), get XLM from the faucet if your b
 | Field | Value |
 |---|---|
 | **Network** | Stellar Testnet |
-| **Contract ID** | `CXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX` |
-| **Explorer** | [View on Stellar Expert](https://stellar.expert/explorer/testnet) |
-| **Default Question** | "What is the best use case for Stellar?" |
-| **Default Options** | DeFi & DEX Trading / Cross-border Payments / NFT Marketplace / Micropayments & Remittances |
+| **Contract ID** | `CACV7UXHHMP4IIKPCN4OLOQIOUSJOZ5TV4HCV5BLXPHK5NLZQ7RUNBGS` |
+| **Explorer** | [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CACV7UXHHMP4IIKPCN4OLOQIOUSJOZ5TV4HCV5BLXPHK5NLZQ7RUNBGS) |
+| **Poll Question** | "What is the best use case for Stellar?" |
+| **Options** | DeFi & DEX Trading / Cross-border Payments / NFT Marketplace / Micropayments & Remittances |
 
-> Replace the Contract ID above after running `contracts/deploy.sh`.
+> Fill in your Contract ID above after running `contracts/deploy.sh` or Step 3e.
 
-### Sample vote transaction
+### Contract call transaction hash
 
 `<paste a successful vote transaction hash here>`
 
-Verify at: `https://stellar.expert/explorer/testnet/tx/<hash>`
+Verify at: `https://stellar.expert/explorer/testnet/tx/<paste-hash-here>`
+
+> **How to get a tx hash:** Run the app, connect Freighter, vote — the tx hash appears in the green success box. Copy it from there.
 
 ---
 
@@ -427,11 +529,16 @@ kit = new StellarWalletsKit({
 
 ## Environment Variables
 
+Set in `frontend/.env`. Restart the dev server after any change.
+
 | Variable | Required | Description |
 |---|---|---|
-| `NEXT_PUBLIC_CONTRACT_ID` | Yes | The deployed Soroban contract address (starts with `C`) |
+| `NEXT_PUBLIC_CONTRACT_ID` | Yes | Deployed Soroban contract address (starts with `C`, 56 chars) |
+| `NEXT_PUBLIC_SIMULATED_SOURCE_ADDRESS` | Yes | Funded testnet G-address used as simulation source for read-only RPC calls. No XLM is spent — it's a dry run. Use your deployer address (`stellar keys address deployer`) or create a dedicated one with `stellar keys generate sim-source --fund --network testnet`. |
 
 All other endpoints (Soroban RPC, Horizon API) are hardcoded constants in `lib/contract.ts` and `lib/stellar.ts` targeting Stellar Testnet.
+
+**For Vercel:** Add both variables in the Vercel dashboard under Settings → Environment Variables.
 
 ---
 

@@ -3,7 +3,7 @@
 **File:** `contracts/poll/src/lib.rs`  
 **Language:** Rust (`#![no_std]`)  
 **SDK:** `soroban-sdk = "22.0.0"`  
-**Compiled Target:** `wasm32-unknown-unknown`
+**Compiled Target:** `wasm32v1-none`
 
 > **Related:** [Architecture](architecture.md) · [Deployment](deployment.md) · [Transaction Flow](transaction-flow.md) · [API Reference](api-reference.md)
 
@@ -246,16 +246,17 @@ codegen-units = 1
 stellar contract build
 ```
 
-Compiles `lib.rs` to `target/wasm32-unknown-unknown/release/poll_contract.wasm` using the Soroban-optimized build pipeline.
+Compiles `lib.rs` to `target/wasm32v1-none/release/poll_contract.wasm` using the Soroban-optimized build pipeline.
 
 ### Step 2 — Identity
 
 ```bash
-stellar keys generate --global deployer --network testnet
+# Do NOT use --global — causes config path errors on Windows
+stellar keys generate deployer --network testnet
 DEPLOYER=$(stellar keys address deployer)
 ```
 
-Generates a local keypair named `deployer` (stored in `~/.config/stellar/identity/deployer.toml`). The `--global` flag means it persists across directories.
+Generates a local keypair named `deployer` (stored in `~/.config/stellar/identity/deployer.toml`). The identity persists across directories.
 
 ### Step 3 — Fund
 

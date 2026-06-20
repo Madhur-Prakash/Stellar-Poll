@@ -19,8 +19,10 @@ Complete instructions for deploying the StellarPoll contract and running the fro
 
 ### WASM compilation target (Contract)
 ```bash
-rustup target add wasm32-unknown-unknown
+rustup target add wasm32v1-none
 ```
+
+> **Note:** Newer versions of `stellar-cli` use `wasm32v1-none`, not `wasm32-unknown-unknown`. If you see `error[E0463]: can't find crate for 'std'`, run the command above.
 
 ### stellar-cli (Contract)
 ```bash
@@ -87,11 +89,12 @@ If you want to customize the question or options, or if the script fails, run th
 cd contracts/poll
 stellar contract build
 ```
-Output: `target/wasm32-unknown-unknown/release/poll_contract.wasm`
+Output: `target/wasm32v1-none/release/poll_contract.wasm`
 
 **Step 2 — Create deployer identity:**
 ```bash
-stellar keys generate --global deployer --network testnet
+# Do NOT use --global — it causes config path errors on Windows
+stellar keys generate deployer --network testnet
 stellar keys address deployer
 ```
 
@@ -103,10 +106,11 @@ curl "https://friendbot.stellar.org?addr=$DEPLOYER"
 
 **Step 4 — Upload WASM:**
 ```bash
+# Run from: contracts/poll/
 WASM_HASH=$(stellar contract upload \
   --network testnet \
   --source deployer \
-  --wasm target/wasm32-unknown-unknown/release/poll_contract.wasm)
+  --wasm target/wasm32v1-none/release/poll_contract.wasm)
 echo "WASM hash: $WASM_HASH"
 ```
 
@@ -120,6 +124,8 @@ echo "Contract ID: $CONTRACT_ID"
 ```
 
 **Step 6 — Initialize with your question:**
+
+**Git Bash / Linux / macOS:**
 ```bash
 stellar contract invoke \
   --network testnet \
@@ -128,6 +134,22 @@ stellar contract invoke \
   -- initialize \
   --question "Your question here?" \
   --options '["Option A","Option B","Option C"]'
+```
+
+**PowerShell (Windows) — JSON quoting fix:**
+
+PowerShell strips inner double quotes when passing to native executables. Two workarounds:
+
+*Option 1 — No spaces in option names (simplest):*
+```powershell
+stellar contract invoke --network testnet --source deployer --id YOUR_CONTRACT_ID -- initialize --question "Your question?" --options '["OptionA","OptionB","OptionC"]'
+```
+
+*Option 2 — Write JSON to a file first (supports spaces):*
+```powershell
+'["DeFi & DEX Trading","Cross-border Payments","NFT Marketplace","Micropayments"]' | Out-File -Encoding utf8 options.json
+
+stellar contract invoke --network testnet --source deployer --id YOUR_CONTRACT_ID -- initialize --question "Your question?" --options-file-path options.json
 ```
 
 Options must be a JSON array string with 2–8 items.
@@ -145,19 +167,36 @@ cd frontend
 npm install
 ```
 
-### 2. Set the contract ID
+### 2. Set the contract ID and simulation source
 
-```bash
-cp .env.local.example .env.local
-```
-
-Edit `.env.local` and paste your contract ID:
+Edit `frontend/.env`:
 
 ```env
-NEXT_PUBLIC_CONTRACT_ID=CDEF456...your_contract_id_here...
+NEXT_PUBLIC_CONTRACT_ID=C...your_contract_id_from_deploy...
+
+# Any funded testnet G-address used as simulation source for read-only calls
+# Use your deployer address — get it with: stellar keys address deployer
+NEXT_PUBLIC_SIMULATED_SOURCE_ADDRESS=G...your_deployer_address...
 ```
 
-The `NEXT_PUBLIC_` prefix makes this variable available in browser JavaScript (Next.js convention).
+**Why is `NEXT_PUBLIC_SIMULATED_SOURCE_ADDRESS` needed?**
+Read-only contract calls (fetching the poll question, options, vote counts) are done via RPC simulation. The simulation needs a valid, funded Stellar account as a "source" to build a transaction structure against. No XLM is actually spent — it's a dry run. Your deployer address works perfectly for this.
+
+**To get your deployer address:**
+```bash
+stellar keys address deployer
+```
+
+**To create a dedicated simulation account (optional, cleaner for Vercel):**
+```bash
+stellar keys generate sim-source --fund --network testnet
+stellar keys address sim-source
+```
+Use the printed address as `NEXT_PUBLIC_SIMULATED_SOURCE_ADDRESS`.
+
+The `NEXT_PUBLIC_` prefix makes variables available in browser JavaScript (Next.js convention). **Restart the dev server after editing `.env`** — Next.js bakes these values at startup.
+
+For **Vercel deployment**, add both variables in the Vercel dashboard under Settings → Environment Variables.
 
 ### 3. Run development server
 
@@ -182,7 +221,7 @@ npm install -g vercel
 vercel
 ```
 
-Set `NEXT_PUBLIC_CONTRACT_ID` as an environment variable in the Vercel project settings.
+Set both `NEXT_PUBLIC_CONTRACT_ID` and `NEXT_PUBLIC_SIMULATED_SOURCE_ADDRESS` as environment variables in the Vercel dashboard (Settings → Environment Variables).
 
 ---
 
@@ -250,11 +289,12 @@ The current `initialize()` has a "once only" guard. To reset, you'd need to:
 Since the WASM is already uploaded (reuse the hash):
 
 ```bash
-# Get existing WASM hash
+# Run from: contracts/poll/
+# If code hasn't changed, upload returns the same hash instantly
 WASM_HASH=$(stellar contract upload \
   --network testnet \
   --source deployer \
-  --wasm contracts/poll/target/wasm32-unknown-unknown/release/poll_contract.wasm)
+  --wasm target/wasm32v1-none/release/poll_contract.wasm)
 
 # Deploy new instance
 NEW_CONTRACT=$(stellar contract deploy \
@@ -262,7 +302,7 @@ NEW_CONTRACT=$(stellar contract deploy \
   --source deployer \
   --wasm-hash "$WASM_HASH")
 
-# Initialize with new question
+# Initialize with new question (Git Bash)
 stellar contract invoke \
   --network testnet \
   --source deployer \
@@ -274,7 +314,9 @@ stellar contract invoke \
 echo "New Contract ID: $NEW_CONTRACT"
 ```
 
-Update `.env.local` with the new `CONTRACT_ID` and restart the frontend.
+> **PowerShell users:** See the JSON quoting fix in Step 6 above if your options contain spaces.
+
+Update `frontend/.env` with the new `CONTRACT_ID` and restart the frontend.
 
 ---
 
@@ -290,10 +332,12 @@ Ensure `~/.cargo/bin` is in your PATH.
 
 ### `error[E0463]: can't find crate for 'std'`
 
-The Rust target is missing:
+The WASM target is missing. Newer `stellar-cli` uses `wasm32v1-none`:
 ```bash
-rustup target add wasm32-unknown-unknown
+rustup target add wasm32v1-none
 ```
+
+> If you previously installed `wasm32-unknown-unknown`, that was for older versions. Add `wasm32v1-none` instead.
 
 ### `friendbot error` / `already funded`
 
@@ -311,11 +355,30 @@ If you run `deploy.sh` a second time with the same contract, `initialize()` will
 
 ### `CONTRACT_ID not set` in frontend
 
-Check that `.env.local` exists in `frontend/` (not the repo root) and contains:
+Check that `frontend/.env` exists and contains:
 ```
 NEXT_PUBLIC_CONTRACT_ID=C...
+NEXT_PUBLIC_SIMULATED_SOURCE_ADDRESS=G...
 ```
-Restart the dev server after editing `.env.local`.
+**Restart the dev server** after editing `.env` — Next.js bakes `NEXT_PUBLIC_*` values at startup, hot reload does not pick them up.
+
+### `invalid encoded string` when loading poll
+
+The simulation source address is invalid or missing. Check:
+1. `NEXT_PUBLIC_SIMULATED_SOURCE_ADDRESS` in `frontend/.env` is a valid 56-character G-address
+2. The account is funded on testnet — run `stellar keys fund deployer --network testnet`
+3. The dev server was restarted after `.env` was updated
+
+### PowerShell strips quotes from `--options`
+
+When running `stellar contract invoke` with `--options '["A","B"]'` in PowerShell, inner double quotes get stripped, producing invalid JSON.
+
+**Fix:** Use the file approach:
+```powershell
+'["Option A","Option B"]' | Out-File -Encoding utf8 options.json
+stellar contract invoke ... --options-file-path options.json
+```
+Or use option names without spaces to avoid the quoting issue entirely.
 
 ### Freighter shows wrong network
 

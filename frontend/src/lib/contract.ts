@@ -30,7 +30,8 @@ async function simulateRead(method: string, args: xdr.ScVal[] = []) {
   const contract = new Contract(CONTRACT_ID);
   // Use a well-known funded testnet account as the simulated source
   const sourceAccount = await server.getAccount(
-    "GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN"
+    process.env.NEXT_PUBLIC_SIMULATED_SOURCE_ADDRESS ??
+    "GAPHXA6K4EFTG77ESEAM6UWGCZZFBRROYOZKWKO4PDESNXOZMYAVSBBK"
   );
   const tx = new TransactionBuilder(sourceAccount, {
     fee: BASE_FEE,
@@ -48,18 +49,25 @@ async function simulateRead(method: string, args: xdr.ScVal[] = []) {
 }
 
 export async function getPollData(): Promise<PollData> {
-  const [question, options, votes] = await Promise.all([
-    simulateRead("get_question"),
-    simulateRead("get_options"),
-    simulateRead("get_all_votes"),
-  ]);
-  const votesArr = votes as number[];
-  return {
-    question: question as string,
-    options: options as string[],
-    votes: votesArr,
-    total: votesArr.reduce((a: number, b: number) => a + b, 0),
-  };
+  try {
+    const [question, options, votes] = await Promise.all([
+      simulateRead("get_question"),
+      simulateRead("get_options"),
+      simulateRead("get_all_votes"),
+    ]);
+
+    const votesArr = votes as number[];
+
+    return {
+      question: question as string,
+      options: options as string[],
+      votes: votesArr,
+      total: votesArr.reduce((a, b) => a + b, 0),
+    };
+  } catch (err) {
+    console.error("getPollData failed:", err);
+    throw err;
+  }
 }
 
 export async function hasVoted(voterAddress: string): Promise<boolean> {
