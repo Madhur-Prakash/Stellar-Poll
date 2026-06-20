@@ -129,9 +129,14 @@ export async function waitForTransaction(
 ): Promise<"SUCCESS" | "FAILED"> {
   for (let i = 0; i < maxRetries; i++) {
     await new Promise((r) => setTimeout(r, 2000));
-    const result = await server.getTransaction(hash);
-    if (result.status === SorobanRpc.Api.GetTransactionStatus.SUCCESS) return "SUCCESS";
-    if (result.status === SorobanRpc.Api.GetTransactionStatus.FAILED) return "FAILED";
+    try {
+      const result = await server.getTransaction(hash);
+      if (result.status === SorobanRpc.Api.GetTransactionStatus.SUCCESS) return "SUCCESS";
+      if (result.status === SorobanRpc.Api.GetTransactionStatus.FAILED) return "FAILED";
+      // NOT_FOUND or unrecognised status — keep polling
+    } catch {
+      // Transient RPC error (e.g. "Bad union switch: 4" while tx is pending) — keep polling
+    }
   }
   return "FAILED";
 }
