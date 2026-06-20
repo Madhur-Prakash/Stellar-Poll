@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { buildVoteTransaction, submitToRpc, waitForTransaction } from "@/lib/contract";
 import { useWalletKit } from "@/hooks/useWalletKit";
 
@@ -28,7 +28,16 @@ export function VoteForm({ options, alreadyVoted, voterChoice, onVoteSuccess, on
   const [selected, setSelected] = useState<number | null>(null);
   const [status, setStatus] = useState<TxStatus>("idle");
   const [txHash, setTxHash] = useState<string | null>(null);
+  const [txTimestamp, setTxTimestamp] = useState<Date | null>(null);
+  const [copied, setCopied] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const copyHash = useCallback(async () => {
+    if (!txHash) return;
+    await navigator.clipboard.writeText(txHash);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }, [txHash]);
 
   const handleVote = async () => {
     if (selected === null || !address) return;
@@ -59,6 +68,7 @@ export function VoteForm({ options, alreadyVoted, voterChoice, onVoteSuccess, on
 
       if (result === "SUCCESS") {
         setStatus("success");
+        setTxTimestamp(new Date());
         refreshBalance();
         onVoteCast?.(options[selected!] ?? "Unknown", hash);
         onVoteSuccess();
@@ -128,12 +138,56 @@ export function VoteForm({ options, alreadyVoted, voterChoice, onVoteSuccess, on
         ))}
       </div>
 
-      {/* Transaction Status */}
-      {status !== "idle" && (
+      {/* Success receipt */}
+      {status === "success" && txHash && (
+        <div className="rounded-xl border border-emerald-500/40 bg-emerald-900/20 overflow-hidden">
+          <div className="px-4 py-3 border-b border-emerald-500/20 flex items-center gap-2">
+            <span className="text-emerald-400 text-base">✅</span>
+            <span className="text-emerald-300 font-semibold text-sm">Vote Cast Successfully</span>
+            {txTimestamp && (
+              <span className="ml-auto text-emerald-600 text-xs">{txTimestamp.toLocaleTimeString()}</span>
+            )}
+          </div>
+          <div className="px-4 py-3 space-y-3 text-xs">
+            {selected !== null && (
+              <div className="flex justify-between items-center">
+                <span className="text-emerald-600 uppercase tracking-wide font-medium">Voted for</span>
+                <span className="text-white font-semibold">{options[selected]}</span>
+              </div>
+            )}
+            <div className="flex justify-between items-center">
+              <span className="text-emerald-600 uppercase tracking-wide font-medium">Network</span>
+              <span className="text-indigo-300">Stellar Testnet</span>
+            </div>
+            <div>
+              <span className="text-emerald-600 uppercase tracking-wide font-medium block mb-1">Transaction Hash</span>
+              <div className="flex items-center gap-2 bg-black/30 rounded-lg px-3 py-2">
+                <span className="text-emerald-200 font-mono break-all flex-1">{txHash}</span>
+                <button
+                  onClick={copyHash}
+                  className="text-emerald-500 hover:text-emerald-300 shrink-0 transition-colors"
+                  title="Copy hash"
+                >
+                  {copied ? "✓" : "⎘"}
+                </button>
+              </div>
+            </div>
+            <a
+              href={`https://stellar.expert/explorer/testnet/tx/${txHash}`}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center justify-center gap-1.5 w-full py-2 rounded-lg border border-emerald-500/30 text-emerald-400 hover:bg-emerald-900/30 transition-colors font-medium"
+            >
+              View on Stellar.Expert ↗
+            </a>
+          </div>
+        </div>
+      )}
+
+      {/* In-progress / failed status */}
+      {status !== "idle" && status !== "success" && (
         <div className={`rounded-xl p-4 border text-sm ${
-          status === "success"
-            ? "bg-emerald-900/30 border-emerald-500/40 text-emerald-200"
-            : status === "failed"
+          status === "failed"
             ? "bg-red-900/30 border-red-500/40 text-red-200"
             : "bg-indigo-900/20 border-indigo-500/30 text-indigo-200"
         }`}>
@@ -143,16 +197,6 @@ export function VoteForm({ options, alreadyVoted, voterChoice, onVoteSuccess, on
             )}
             <span className="font-medium">{STATUS_LABELS[status]}</span>
           </div>
-          {txHash && (
-            <a
-              href={`https://stellar.expert/explorer/testnet/tx/${txHash}`}
-              target="_blank"
-              rel="noreferrer"
-              className="text-xs underline opacity-70 hover:opacity-100 mt-2 block font-mono break-all"
-            >
-              {txHash}
-            </a>
-          )}
         </div>
       )}
 
