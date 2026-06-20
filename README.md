@@ -16,10 +16,11 @@ StellarPoll is a fully decentralized polling application built on Stellar's Soro
 - [Project Structure](#project-structure)
 - [Prerequisites](#prerequisites)
 - [Quick Start](#quick-start)
-  - [1. Clone the repository](#1-clone-the-repository)
-  - [2. Deploy the Soroban contract](#2-deploy-the-soroban-contract)
-  - [3. Configure environment](#3-configure-environment)
-  - [4. Run the frontend](#4-run-the-frontend)
+  - [Step 1 — Clone](#step-1--clone-the-repository)
+  - [Step 2 — Install contract tooling](#step-2--install-contract-tooling-one-time-setup)
+  - [Step 3 — Deploy contract](#step-3--deploy-the-soroban-contract)
+  - [Step 4 — Set contract ID](#step-4--set-the-contract-id)
+  - [Step 5 — Run frontend](#step-5--install-dependencies-and-run)
 - [Deployed Contract](#deployed-contract)
 - [Smart Contract Reference](#smart-contract-reference)
 - [Transaction Flow](#transaction-flow)
@@ -132,7 +133,7 @@ stellar_poll/
     ├── tsconfig.json
     ├── next.config.ts
     ├── postcss.config.mjs
-    ├── .env.local.example
+    ├── .env                    ← set NEXT_PUBLIC_CONTRACT_ID here
     └── src/
         ├── app/
         │   ├── layout.tsx         # Root layout, Geist fonts, metadata
@@ -156,77 +157,123 @@ stellar_poll/
 
 ## Prerequisites
 
-### For running the frontend only
+### 1. Node.js 18+
 
-- **Node.js** 18 or later
-- **Freighter wallet** browser extension — [freighter.app](https://freighter.app)
-- **Testnet XLM** — [Stellar Laboratory Faucet](https://laboratory.stellar.org/account-creator?network=testnet)
-- A deployed contract ID (see below, or use a friend's)
+Download and install from [nodejs.org](https://nodejs.org). Verify: `node --version`
 
-### For deploying the contract
+### 2. Rust + Cargo (needed to deploy the contract)
 
-- **Rust** toolchain — [rustup.rs](https://rustup.rs)
-- **WASM target** — `rustup target add wasm32-unknown-unknown`
-- **stellar-cli** — `cargo install --locked stellar-cli --features opt`
+**Windows:** Go to [rustup.rs](https://rustup.rs) → download `rustup-init.exe` → run it → press `1` (default install) → wait → **close and reopen your terminal** (PATH must refresh).
+
+**Mac/Linux:**
+```bash
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+```
+
+Verify (after reopening terminal): `cargo --version`
+
+### 3. Freighter wallet browser extension
+
+Install from [freighter.app](https://freighter.app). Switch it to **Testnet** in Settings → Network.
+
+### 4. Testnet XLM
+
+Get free testnet XLM from the [Stellar Faucet](https://laboratory.stellar.org/account-creator?network=testnet).
 
 ---
 
 ## Quick Start
 
-### 1. Clone the repository
+> **Where to run what — at a glance:**
+>
+> | Step | Directory | Shell |
+> |---|---|---|
+> | Install Rust / Node | anywhere | any |
+> | `rustup target add ...` | anywhere | any |
+> | `cargo install stellar-cli` | anywhere | any |
+> | `bash contracts/deploy.sh` | `stellar_poll/` (repo root) | **Git Bash** |
+> | `npm install` / `npm run dev` | `stellar_poll/frontend/` | any |
+
+---
+
+### Step 1 — Clone the repository
 
 ```bash
-git clone <your-repo-url>
+# Run from: anywhere
+git clone https://github.com/Madhur-Prakash/Stellar-Poll
 cd stellar_poll
 ```
 
-### 2. Deploy the Soroban contract
+---
 
-> Skip this step if you already have a deployed contract ID.
+### Step 2 — Install contract tooling (one-time setup)
+
+Open **any terminal** (PowerShell, cmd, or Git Bash) and run each line:
 
 ```bash
-# Install stellar-cli (once)
-cargo install --locked stellar-cli --features opt
-
-# Add WASM compilation target (once)
+# Run from: anywhere — installs the WASM compilation target
 rustup target add wasm32-unknown-unknown
+```
 
-# Build, deploy, and initialize the poll contract
+```bash
+# Run from: anywhere — installs the Stellar CLI (takes 5–10 min, compiles from source)
+cargo install --locked stellar-cli --features opt
+```
+
+Verify: `stellar --version`
+
+---
+
+### Step 3 — Deploy the Soroban contract
+
+> **Windows:** The deploy script is a `.sh` bash file. Use **Git Bash** (installed with Git for Windows), not PowerShell or cmd.
+
+```bash
+# Run from: stellar_poll/  (the repo root, NOT the frontend folder)
 bash contracts/deploy.sh
 ```
 
-The script will:
-1. Compile the Rust contract to WASM
-2. Generate a `deployer` keypair and fund it from the testnet friendbot
-3. Upload the WASM bytecode to the network
-4. Deploy the contract and get a Contract ID
-5. Call `initialize()` with a default question and four options
-6. Print the `CONTRACT_ID` — copy it
+What the script does:
+1. Compiles `contracts/poll/src/lib.rs` → WASM binary
+2. Generates a `deployer` keypair and funds it from the testnet friendbot
+3. Uploads the WASM to Stellar Testnet
+4. Deploys the contract instance → prints a `CONTRACT_ID`
+5. Calls `initialize()` with a default poll question and 4 options
 
-### 3. Configure environment
-
-```bash
-cd frontend
-cp .env.local.example .env.local
+At the end you will see:
+```
+✅ Done! Add this to your .env.local:
+NEXT_PUBLIC_CONTRACT_ID=CABC1234...your_real_id...
 ```
 
-Edit `.env.local`:
+**Copy that contract ID.**
+
+---
+
+### Step 4 — Set the contract ID
+
+Open `frontend/.env` and replace the placeholder with your real contract ID:
 
 ```env
-NEXT_PUBLIC_CONTRACT_ID=C...your_contract_id_here...
+# frontend/.env  — edit this file directly
+NEXT_PUBLIC_CONTRACT_ID=CABC1234...your_real_id_from_step_3...
 ```
 
-### 4. Run the frontend
+> The file already exists at `frontend/.env`. Just open it and replace `C...your_contract_id_here...` with the ID printed by the deploy script.
+
+---
+
+### Step 5 — Install dependencies and run
 
 ```bash
-cd frontend
+# Run from: stellar_poll/frontend/
 npm install
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
 
-Connect Freighter, fund your testnet wallet from the faucet if needed, pick an option, and submit your vote.
+Connect Freighter (make sure it's on Testnet), get XLM from the faucet if your balance is 0, pick a poll option, and submit your vote.
 
 ---
 
@@ -390,14 +437,18 @@ All other endpoints (Soroban RPC, Horizon API) are hardcoded constants in `lib/c
 
 ## Scripts
 
+### From `stellar_poll/frontend/`
+
 ```bash
-# Frontend (from frontend/)
-npm run dev        # Start development server with Turbopack
+npm run dev        # Start development server (Turbopack, hot reload)
 npm run build      # Production build
 npm run start      # Start production server
 npm run lint       # Run ESLint
+```
 
-# Contract (from repo root)
+### From `stellar_poll/` (repo root) — Git Bash only on Windows
+
+```bash
 bash contracts/deploy.sh   # Full contract build + deploy + initialize
 ```
 
