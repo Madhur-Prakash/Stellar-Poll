@@ -11,13 +11,18 @@ export interface FeedItem {
 
 interface Props {
   items: FeedItem[];
+  totalVotes?: number;
 }
 
-export function ActivityFeed({ items }: Props) {
+export function ActivityFeed({ items, totalVotes = 0 }: Props) {
   if (items.length === 0) {
     return (
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 text-center">
-        <p className="text-zinc-600 text-sm">No votes yet. Be the first!</p>
+        <p className="text-zinc-600 text-sm">
+          {totalVotes > 0
+            ? `${totalVotes} vote${totalVotes === 1 ? "" : "s"} on-chain — cast yours to appear here.`
+            : "No votes yet. Be the first!"}
+        </p>
       </div>
     );
   }

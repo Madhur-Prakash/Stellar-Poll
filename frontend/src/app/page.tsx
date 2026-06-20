@@ -112,7 +112,7 @@ export default function Home() {
             </div>
 
             <div className="space-y-5">
-              <ActivityFeed items={feed} />
+              <ActivityFeed items={feed} totalVotes={pollData.total} />
               <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-3">
                 <h3 className="text-zinc-400 text-xs font-semibold uppercase tracking-widest">Stats</h3>
                 <div className="space-y-2">
